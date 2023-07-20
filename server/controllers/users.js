@@ -16,14 +16,18 @@ export const signup = async (req, res) => {
 
 		const { email, password } = req.body;
 
-		return res.status(200).json({ message: "Email: " + email + ", password: " + password});
-		
-		const user = await UserModal.findOne({ email });
-		if (user) return res.status(400).json({ message: "Email already belongs to an existing user." });
+		    // add doc to db
+		        const user = await UserModal.create({ email, password });
+		        res.status(200).json(user);
 
-		// const hashedPassword = await bcrypt.hash(password, 11);
-		const newUser = await UserModal.create({ email, password });
-		if (!newUser) return res.status(500).json({ message: "User could not be added to database." });
+		// return res.status(200).json({ message: "Email: " + email + ", password: " + password});
+		
+		// const user = await UserModal.findOne({ email });
+		// if (user) return res.status(400).json({ message: "Email already belongs to an existing user." });
+
+		// // const hashedPassword = await bcrypt.hash(password, 11);
+		// const newUser = await UserModal.create({ email, password });
+		// if (!newUser) return res.status(500).json({ message: "User could not be added to database." });
 
 		// const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "2h" });
 		// const verificationUrl = `${process.env.BASE_URL}/user/verify-email/${verificationToken}`;
