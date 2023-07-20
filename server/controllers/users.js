@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-import UserModal from "../models/user.js";
+import userSchema from "../models/user.js";
 import SessionModal from "../models/session.js";
 
 import { generateToken } from "../other/token.js";
@@ -14,35 +14,35 @@ export const signup = async (req, res) => {
 
 	try {
 
-		const { email, password, nickname } = req.body;
+		const { email, password } = req.body;
 		
-		const user = await UserModal.findOne({ email });
+		const user = await userSchema.findOne({ email });
 		if (user) return res.status(400).json({ message: "Email already belongs to an existing user." });
 
-		const hashedPassword = await bcrypt.hash(password, 11);
-		const newUser = await UserModal.create({ email, password: hashedPassword, nickname });
+		// const hashedPassword = await bcrypt.hash(password, 11);
+		const newUser = await userSchema.create({ email, password });
 		if (!newUser) return res.status(500).json({ message: "User could not be added to database." });
 
-		const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "2h" });
-		const verificationUrl = `${process.env.BASE_URL}/user/verify-email/${verificationToken}`;
+		// const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "2h" });
+		// const verificationUrl = `${process.env.BASE_URL}/user/verify-email/${verificationToken}`;
 
-		const transporter = await getTransporter();
-		if (!transporter) return res.status(500).json({ message: "Could not create email transporter." });
-		const mailOptions = {
+		// const transporter = await getTransporter();
+		// if (!transporter) return res.status(500).json({ message: "Could not create email transporter." });
+		// const mailOptions = {
 
-			from: "Chordeographer <chordeographer.official@gmail.com>",
-			to: email,
-			subject: "Verify your email.",
-			text: `Verify your email: ${verificationUrl}`,
-			html: 	`<div>
-						<img src="https://i.imgur.com/9CSWeNf.gif" alt="imgur gif" />
-						<a href='${verificationUrl}'>Verify your email.</a>
-					</div>`
-		};
+		// 	from: "Chordeographer <chordeographer.official@gmail.com>",
+		// 	to: email,
+		// 	subject: "Verify your email.",
+		// 	text: `Verify your email: ${verificationUrl}`,
+		// 	html: 	`<div>
+		// 				<img src="https://i.imgur.com/9CSWeNf.gif" alt="imgur gif" />
+		// 				<a href='${verificationUrl}'>Verify your email.</a>
+		// 			</div>`
+		// };
 
-		const result = await transporter.sendMail(mailOptions);
-		if (!result) return res.status(500).json({ message: "Could not send verification email to user." });
-		return res.status(200).json({ result, message: "Successfully signed up. Verify your email before logging in." });
+		// const result = await transporter.sendMail(mailOptions);
+		// if (!result) return res.status(500).json({ message: "Could not send verification email to user." });
+		return res.status(200).json({ result, message: "Successfully signed up." });
 
 	} catch (error) {
 
