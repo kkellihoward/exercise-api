@@ -13,16 +13,16 @@ app.use(express.json());
 // parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));
 
+app.use('/user/signin', (req, res) => {
+	const { email, password } = req.body;
+	res.status(200).send({message: "I recieved an API call " + email + ' ' + password})
+});
 
 app.get('/', (req, res) => {
 	res.send('Yay');
 });
 
-// app.use('/', (req, res, next) => {
-// 	res.status(200).send({message: "I recieved an API call ", req.params})
-// });
-
-app.use('/user', userRoutes);
+// app.use('/user', userRoutes);
 
 dotenv.config();
 
