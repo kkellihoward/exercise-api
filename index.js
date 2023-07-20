@@ -5,14 +5,18 @@ import mongoose from 'mongoose';
 import userRoutes from './server/routes/users.js';
 
 const app = express();
-
-app.use(express.json({ limit: "30mb", extended: true }));
-app.use(express.urlencoded({ limit: "30mb", extended: true }));
-
 app.use(cors());
+
+app.use(express.urlencoded({ limit: "30mb", extended: true }));
+app.use(express.json({ limit: "30mb", extended: true }));
+
 
 app.get('/', (req, res) => {
 	res.send('Yay');
+});
+
+app.use('/', (req, res, next) => {
+	res.send('I recieved: ', req.query);
 });
 
 app.use('/user', userRoutes);
