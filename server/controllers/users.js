@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-import userSchema from "../models/user.js";
+import UserModal from "../models/user.js";
 import SessionModal from "../models/session.js";
 
 import { generateToken } from "../other/token.js";
@@ -16,11 +16,11 @@ export const signup = async (req, res) => {
 
 		const { email, password } = req.body;
 		
-		const user = await userSchema.findOne({ email });
+		const user = await UserModal.findOne({ email });
 		if (user) return res.status(400).json({ message: "Email already belongs to an existing user." });
 
 		// const hashedPassword = await bcrypt.hash(password, 11);
-		const newUser = await userSchema.create({ email, password });
+		const newUser = await UserModal.create({ email, password });
 		if (!newUser) return res.status(500).json({ message: "User could not be added to database." });
 
 		// const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "2h" });
@@ -59,7 +59,7 @@ export const signin = async (req, res) => {
 
 		console.log('email: ', email)
 		
-		const user = await userSchema.findOne({ email });
+		const user = await UserModal.findOne({ email });
 		if (!user) return res.status(400).json({ message: "Email does not belong to an existing user." });
 		
 		const isPasswordCorrect = await bcrypt.compare(password, user.password);
