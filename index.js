@@ -14,7 +14,7 @@ app.get('/', (req, res) => {
 	res.send('Yay');
 });
 
-app.use('/user', userRoutes);
+app.use('/users', userRoutes);
 
 dotenv.config();
 
