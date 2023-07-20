@@ -7,8 +7,11 @@ import userRoutes from './server/routes/users.js';
 const app = express();
 app.use(cors());
 
-app.use(express.urlencoded({ limit: "30mb", extended: true }));
-app.use(express.json({ limit: "30mb", extended: true }));
+// parse requests of content-type - application/json
+app.use(express.json());
+
+// parse requests of content-type - application/x-www-form-urlencoded
+app.use(express.urlencoded({ extended: true }));
 
 
 app.get('/', (req, res) => {
