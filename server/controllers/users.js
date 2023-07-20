@@ -68,8 +68,8 @@ export const signin = async (req, res) => {
 		const user = await UserModal.findOne({ email });
 		if (!user) return res.status(400).json({ message: "Email does not belong to an existing user." });
 		
-		const isPasswordCorrect = await bcrypt.compare(password, user.password);
-		if (!isPasswordCorrect) return res.status(401).json({ message: "Invalid credentials." });
+		// const isPasswordCorrect = await bcrypt.compare(password, user.password);
+		if (password !== user.password ) return res.status(401).json({ message: "Invalid credentials." });
 
 		// if (!user.isVerified) return res.status(403).json({ message: "User has not verified their email." });
 		// await SessionModal.findByIdAndDelete(user._id);
@@ -83,6 +83,8 @@ export const signin = async (req, res) => {
 		// await UserModal.findByIdAndUpdate(user._id, { lastLogin: Date.now() });
 
 		// return res.status(200).json({ authToken });
+
+		return res.status(200).json({ message: "You are now logged in!" })
 
 	} catch (error) {
 
