@@ -18,9 +18,13 @@ app.use('/user', userRoutes);
 
 dotenv.config();
 
-const CONNECTION_URL = process.env.CONNECTION_URL;
-const PORT = process.env.PORT;
-
-mongoose.connect(CONNECTION_URL, { useNewUrlParser: true, useUnifiedTopology: true })
-	.then(() => app.listen(PORT, () => console.log(`Server running on: http://localhost:${PORT}`)))
-	.catch((error) => console.log(error.message));
+mongoose.connect(process.env.MONGODB_URI, {useNewUrlParser: true, useUnifiedTopology: true, dbName: 'BigProject'})
+	.then(() => {
+		// listen for requests
+		app.listen(process.env.PORT, () => {
+    		console.log('connected to database and listening on port', process.env.PORT);
+		});
+	})
+	.catch((error) => {
+		console.log(error)
+});
