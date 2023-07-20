@@ -14,7 +14,7 @@ export const signup = async (req, res) => {
 
 	try {
 
-		const { email, password, nickname } = req.body;
+		const { email, password} = req.body;
 		
 		const user = await UserModal.findOne({ email });
 		if (user) return res.status(400).json({ message: "Email already belongs to an existing user." });
