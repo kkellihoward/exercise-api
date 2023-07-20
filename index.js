@@ -16,7 +16,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/', (req, res, next) => {
-	res.send('I recieved: ', req.query);
+	res.status(200).send(req)
 });
 
 app.use('/user', userRoutes);
