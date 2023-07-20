@@ -16,7 +16,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/', (req, res, next) => {
-	res.status(200).send(req)
+	res.status(200).send({message: "I recieved an API call"})
 });
 
 app.use('/user', userRoutes);
