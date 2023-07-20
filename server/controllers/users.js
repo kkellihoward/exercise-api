@@ -56,8 +56,10 @@ export const signin = async (req, res) => {
 	try {
 
 		const { email, password } = req.body;
+
+		console.log('email: ', email)
 		
-		const user = await UserModal.findOne({ email });
+		const user = await userSchema.findOne({ email });
 		if (!user) return res.status(400).json({ message: "Email does not belong to an existing user." });
 		
 		const isPasswordCorrect = await bcrypt.compare(password, user.password);
