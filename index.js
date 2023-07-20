@@ -15,9 +15,9 @@ app.get('/', (req, res) => {
 	res.send('Yay');
 });
 
-app.use('/', (req, res, next) => {
-	res.status(200).send({message: "I recieved an API call ", req.params})
-});
+// app.use('/', (req, res, next) => {
+// 	res.status(200).send({message: "I recieved an API call ", req.params})
+// });
 
 app.use('/user', userRoutes);
 
