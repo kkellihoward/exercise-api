@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import userRoutes from './routes/users.js';
+import {userRoutes} from './routes/users.js';
 const app = express();
 
 app.use(express.json({ limit: "30mb", extended: true }));
