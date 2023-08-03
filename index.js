@@ -13,9 +13,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/user', userRoutes);
 
-// app.get('/', (req, res) => {
-// 	res.send('Yay');
-// });
+app.get('/', (req, res) => {
+	res.send('Yay');
+});
 
 
 dotenv.config();
