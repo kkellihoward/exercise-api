@@ -1,230 +1,174 @@
-import dotenv from "dotenv";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-
-import UserModal from "../models/user.js";
-import SessionModal from "../models/session.js";
-
-import { generateToken } from "../other/token.js";
-import { getTransporter } from "../other/mail.js";
-
-dotenv.config();
-
-export const signup = async (req, res) => {
-
-	try {
-
-		const { email, password } = req.body;
-
-		    // add doc to db
-		        const user = await UserModal.create({ email, password });
-		        res.status(200).json(user);
-
-		// return res.status(200).json({ message: "Email: " + email + ", password: " + password});
-		
-		// const user = await UserModal.findOne({ email });
-		// if (user) return res.status(400).json({ message: "Email already belongs to an existing user." });
-
-		// // const hashedPassword = await bcrypt.hash(password, 11);
-		// const newUser = await UserModal.create({ email, password });
-		// if (!newUser) return res.status(500).json({ message: "User could not be added to database." });
-
-		// const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "2h" });
-		// const verificationUrl = `${process.env.BASE_URL}/user/verify-email/${verificationToken}`;
-
-		// const transporter = await getTransporter();
-		// if (!transporter) return res.status(500).json({ message: "Could not create email transporter." });
-		// const mailOptions = {
-
-		// 	from: "Chordeographer <chordeographer.official@gmail.com>",
-		// 	to: email,
-		// 	subject: "Verify your email.",
-		// 	text: `Verify your email: ${verificationUrl}`,
-		// 	html: 	`<div>
-		// 				<img src="https://i.imgur.com/9CSWeNf.gif" alt="imgur gif" />
-		// 				<a href='${verificationUrl}'>Verify your email.</a>
-		// 			</div>`
-		// };
-
-		// const result = await transporter.sendMail(mailOptions);
-		// if (!result) return res.status(500).json({ message: "Could not send verification email to user." });
-		return res.status(200).json({ result, message: "Successfully signed up." });
-
-	} catch (error) {
-
-		console.log("Internal server error during sign up:", error.message);
-		return res.status(500).json({ message: "Internal server error: " + error.message });
-	}
-};
-
-export const signin = async (req, res) => {
-
-	try {
-
-		const { email, password } = req.body;
-
-		console.log('email: ', email)
-		
-		const user = await UserModal.findOne({ email });
-		if (!user) return res.status(400).json({ message: "Email does not belong to an existing user." });
-		
-		// const isPasswordCorrect = await bcrypt.compare(password, user.password);
-		if (password !== user.password ) return res.status(401).json({ message: "Invalid credentials." });
-
-		// if (!user.isVerified) return res.status(403).json({ message: "User has not verified their email." });
-		// await SessionModal.findByIdAndDelete(user._id);
-
-		// let authToken = "";
-		// do { authToken = generateToken(69); }
-		// while (await SessionModal.findOne({ authToken }));
-
-		// const session = await SessionModal.create({ _id: user._id, ip, authToken });
-		// if (!session) return res.status(500).json({ message: "Could not create logged in session for user." });
-		// await UserModal.findByIdAndUpdate(user._id, { lastLogin: Date.now() });
-
-		// return res.status(200).json({ authToken });
-
-		return res.status(200).json({ message: "You are now logged in!" })
-
-	} catch (error) {
-
-		console.log("Internal server error during sign in:", error.message);
-		return res.status(500).json({ message: "Internal server error: " + error.message });
-	}
-};
-
-export const signout = async (req, res) => {
-
-	try {
-
-		const { authToken } = req.body;
-
-		await SessionModal.findOneAndDelete({ authToken });
-		return res.status(200).json({ message: "Successfully signed out." });
-
-	} catch (error) {
-
-		console.log("Internal server error during sign out:", error.message);
-		return res.status(500).json({ message: "Internal server error: " + error.message });
-	}
-};
-
-export const verifyEmail = async (req, res) => {
-
-	try {
-
-		const { verificationToken } = req.body;
-
-		const payload = jwt.verify(verificationToken, process.env.JWT_SECRET);
-		if (!payload.email) return res.status(401).json({ message: "Invalid verification token." });
-
-		const user = await UserModal.findOne({ email: payload.email });
-		if (!user) return res.status(400).json({ message: "Email not registered." });
-
-		user.isVerified = true;
-		await user.save();
-
-		return res.status(200).json({ message: "Successfully verified email." });
-
-	} catch (error) {
-
-		console.log("Internal server error while verifying email:", error.message);
-		return res.status(500).json({ message: "Internal server error: " + error.message });
-	}
-};
-
-export const resendVerificationEmail = async (req, res) => {
-
-	try {
-
-		const { email } = req.body;
-
-		const user = await UserModal.findOne({ email });
-		if (!user) return res.status(400).json({ message: "Email not registered." });
-		
-		const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "2h" });
-		const verificationUrl = `${process.env.BASE_URL}/user/verify-email/${verificationToken}`;
-
-		const transporter = await getTransporter();
-		if (!transporter) return res.status(500).json({ message: "Could not create email transporter." });
-		const mailOptions = {
-
-			from: "Chordeographer <chordeographer.official@gmail.com>",
-			to: email,
-			subject: "Verify your email.",
-			text: `Verify your email: ${verificationUrl}`,
-			html: 	`<div>
-						<img src="https://i.imgur.com/9CSWeNf.gif" alt="imgur gif" />
-						<a href='${verificationUrl}'>Verify your email.</a>
-					</div>`
-		};
-
-		const result = await transporter.sendMail(mailOptions);
-		if (!result) return res.status(500).json({ message: "Could not send verification email to user." });
-		return res.status(200).json({ result, message: `Email verification link sent to ${email}.` });
-
-	} catch (error) {
-
-		console.log("Internal server error while resending verification email:", error.message);
-		return res.status(500).json({ message: "Internal server error: " + error.message });
-	}
-};
-
-export const tryReset = async (req, res) => {
-
-	try {
-
-		const { email } = req.body;
-
-		const user = await UserModal.findOne({ email });
-		if (!user) return res.status(400).json({ message: "Email not registered." });
-		
-		const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "30m" });
-		const resetUrl = `${process.env.BASE_URL}/user/reset-password/${verificationToken}`;
-
-		const transporter = await getTransporter();
-		if (!transporter) return res.status(500).json({ message: "Could not create email transporter." });
-		const mailOptions = {
-
-			from: "Chordeographer <chordeographer.official@gmail.com>",
-			to: email,
-			subject: "Reset your password.",
-			text: `Verify your email: ${resetUrl}`,
-			html: `<div><a href='${resetUrl}'>Reset your password.</a></div>`
-		};
-
-		const result = await transporter.sendMail(mailOptions);
-		if (!result) return res.status(500).json({ message: "Could not send email for password recovery." });
-		return res.status(200).json({ result, message: `Password reset link sent to ${email}.` });
-
-	} catch (error) {
-
-		console.log("Internal server error while trying to reset password:", error.message);
-		return res.status(500).json({ message: "Internal server error: " + error.message });
-	}
-};
-
-export const resetPassword = async (req, res) => {
-
-	try {
-
-		const { verificationToken, password } = req.body;
-		
-		const payload = jwt.verify(verificationToken, process.env.JWT_SECRET);
-		if (!payload.email) return res.status(401).json({ message: "Invalid verification token." });
-
-		const user = await UserModal.findOne({ email: payload.email });
-		if (!user) return res.status(400).json({ message: "Email not registered." });
-
-		const hashedPassword = await bcrypt.hash(password, 12);
-		user.password = hashedPassword;
-		await user.save();
-
-		return res.status(200).json({ message: "Successfully reset password." });
-
-	} catch (error) {
-
-		console.log("Internal server error during authentication:", error.message);
-		return res.status(500).json({ message: "Internal server error: " + error.message });
-	}
+import React, { useRef, useState, useEffect } from 'react';
+import { faCheck, faTimes, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import * as Components from './LoginSignup';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
+
+const USER_REGEX = /^[A-z][A-z0-9-_]{3,23}$/;
+const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
+const EMAIL_REGEX = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+
+export const SignUpForm = () => {
+    const navigate = useNavigate()
+
+    const userRef = useRef();
+    const errRef = useRef();
+
+    const [user, setUser] = useState('');
+    const [validName, setValidName] = useState(false);
+    const [userFocus, setUserFocus] = useState(false);
+
+    const [email, setEmail] = useState('');
+    const [validEmail, setValidEmail] = useState(false);
+    const [emailFocus, setEmailFocus] = useState(false);
+
+    const [pwd, setPwd] = useState('');
+    const [validPwd, setValidPwd] = useState(false);
+    const [pwdFocus, setPwdFocus] = useState(false);
+
+    const [matchPwd, setMatchPwd] = useState('');
+    const [validMatch, setValidMatch] = useState(false);
+    const [matchFocus, setMatchFocus] = useState(false);
+
+    const [errMsg, setErrMsg] = useState('');
+    const [success, setSuccess] = useState(false);
+
+    useEffect(() => {
+        userRef.current.focus();
+    }, []);
+
+    useEffect(() => {
+        setValidName(USER_REGEX.test(user));
+    }, [user]);
+
+    useEffect(() => {
+        setValidEmail(EMAIL_REGEX.test(email));
+    }, [email]);
+
+    useEffect(() => {
+        setValidPwd(PWD_REGEX.test(pwd));
+        setValidMatch(pwd === matchPwd);
+    }, [pwd, matchPwd]);
+
+    useEffect(() => {
+        setErrMsg('');
+    }, [user, pwd, matchPwd]);
+
+    const createAccount = async e => {
+        e.preventDefault();
+        console.log(user, email, pwd);
+
+        // if(validName == true && validEmail == true && validPwd == true && validMatch == true)
+        // {
+            try {
+                const apiUrl = 'https://excerciseapi-3d89276bdcd6.herokuapp.com/createAccount'; 
+                const username = user
+                const password = pwd
+                const data = { email, username, password };
+            
+                const response = await axios.post(apiUrl, data, { headers: {
+                  'Content-Type': 'application/json'
+                  }}
+                );
+            
+                if(response.status === 200)
+                {
+                  console.log("Here")
+                }
+                // Handle the response from the API as needed
+                console.log('API Response:', response.data);
+                
+                // You can return the response data or handle it further as per your requirements
+                return response.data;
+            } catch (error) {
+            // Handle any errors that occurred during the API call
+            console.error('API Error:', error);
+            // throw error;
+            }
+        // }
+        // else
+        //     return;
+    };
+
+    return (
+        <>
+            <p ref={errRef} className={errMsg ? "errmsg" : "offscreen"} aria-live="assertive">{errMsg}</p>
+            <Components.Form onSubmit={createAccount}>
+                {/* setting field values for sign up */}
+                <Components.Title>Sign up</Components.Title>
+
+                <Components.Input 
+                    type='userName' 
+                    placeholder='User Name'
+                    ref={userRef}
+                    autoComplete='off'
+                    onChange={e => setUser(e.target.value)}
+                    requiredaria-invalid={validName ? "false" : "true"}
+                    aria-describedby="uidnote"
+                    onFocus={() => setUserFocus(true)}
+                    onBlur={() => setUserFocus(false)} 
+                />
+                <FontAwesomeIcon icon={faCheck} className={validName ? "valid" : "hide"} />
+                <p id="uidnote" className={userFocus && user && !validName ? "instructions" : "offscreen"}>
+                    <FontAwesomeIcon icon={faInfoCircle} />
+                    &nbsp;4 to 24 characters.<br />
+                    Must begin with a letter.<br />
+                    Letters, numbers, underscores, hyphens allowed.
+                </p>
+
+                <Components.Input 
+                    type='email'
+                    placeholder='Email'
+                    onChange={e => setEmail(e.target.value)}
+                    requiredaria-invalid={validEmail ? "false" : "true"}
+                    aria-describedby="emailnote"
+                    onFocus={() => setEmailFocus(true)}
+                    onBlur={() => setEmailFocus(false)}
+                />
+                <FontAwesomeIcon icon={faCheck} className={validEmail ? "valid" : "hide"} />
+                <p id="emailnote" className={emailFocus && email && !validEmail ? "instructions" : "offscreen"}>
+                    <FontAwesomeIcon icon={faInfoCircle} />
+                    &nbsp;Enter a valid email address.
+                </p>
+
+                <Components.Input 
+                    type='password' 
+                    placeholder='Password'
+                    onChange={(e) => setPwd(e.target.value)}
+                    value={pwd}
+                    required
+                    aria-invalid={validPwd ? "false" : "true"}
+                    aria-describedby="pwdnote"
+                    onFocus={() => setPwdFocus(true)}
+                    onBlur={() => setPwdFocus(false)}
+                />
+                <FontAwesomeIcon icon={faCheck} className={validPwd ? "valid" : "hide"}/>
+                <p id="pwdnote" className={pwdFocus && !validPwd ? "instructions" : "offscreen"}>
+                    <FontAwesomeIcon icon={faInfoCircle} />
+                    &nbsp;8 to 24 characters.<br />
+                    Must include uppercase and lowercase letters, a number and a special character.<br />
+                    Allowed special characters: <span aria-label="exclamation mark">!</span> <span aria-label="at symbol">@</span> <span aria-label="hashtag">#</span> <span aria-label="dollar sign">$</span> <span aria-label="percent">%</span>
+                </p>
+                <Components.Input 
+                    type='password' 
+                    placeholder='Confirm Password'
+                    onChange={(e) => setMatchPwd(e.target.value)}
+                    value={matchPwd}
+                    required
+                    aria-invalid={validMatch ? "false" : "true"}
+                    aria-describedby="confirmnote"
+                    onFocus={() => setMatchFocus(true)}
+                    onBlur={() => setMatchFocus(false)}
+                />
+                <FontAwesomeIcon icon={faCheck} className={validMatch && matchPwd ? "valid" : "hide"} />
+                <p id="confirmnote" className={matchFocus && !validMatch ? "instructions" : "offscreen"}>
+                    <FontAwesomeIcon icon={faInfoCircle} />
+                    &nbsp;Must match the first password input field.
+                </p>
+                <Components.Button type='submit' style={{backgroundColor: '#7f44d4'}}>Sign Up</Components.Button>
+            </Components.Form>
+        </>
+    );
 };
