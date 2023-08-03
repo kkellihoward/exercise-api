@@ -25,7 +25,7 @@ export const createAccount = async (req, res) => {
 
 	        const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "2h" });
 		const verificationUrl = `${process.env.BASE_URL}/user/verify-email/${verificationToken}`;
-
+		console.log(verificationToken);
 		const transporter = await getTransporter();
 		if (!transporter) return res.status(500).json({ message: "Could not create email transporter." });
 		const mailOptions = {
