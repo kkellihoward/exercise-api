@@ -22,7 +22,6 @@ export const createAccount = async (req, res) => {
 	    // add doc to db
 	    try {
 	        const newUser = await UserModal.create({email, username, password});
-	        res.status(200).json(newUser);
 
 	        const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "2h" });
 		const verificationUrl = `${process.env.BASE_URL}/user/verify-email/${verificationToken}`;
