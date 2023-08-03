@@ -58,9 +58,10 @@ export const signin = async (req, res) => {
 		
 		const user = await UserModal.findOne({ email });
 		if (!user) return res.status(400).json({ message: "Email does not belong to an existing user." });
-		
+			
 		// const isPasswordCorrect = await bcrypt.compare(password, user.password);
 		if (password !== user.password ) return res.status(401).json({ message: "Invalid credentials." });
+		if (!user.isVerified) return res.status(403).json({ message: "User has not verified their email." });
 
 		return res.status(200).json(user);
 
@@ -137,12 +138,11 @@ export const resendVerificationEmail = async (req, res) => {
 		if (!transporter) return res.status(500).json({ message: "Could not create email transporter." });
 		const mailOptions = {
 
-			from: "Chordeographer <chordeographer.official@gmail.com>",
+			from: "Event Planner <bigproject4331@gmail.com>",
 			to: email,
 			subject: "Verify your email.",
 			text: `Verify your email: ${verificationUrl}`,
 			html: 	`<div>
-						<img src="https://i.imgur.com/9CSWeNf.gif" alt="imgur gif" />
 						<a href='${verificationUrl}'>Verify your email.</a>
 					</div>`
 		};
@@ -158,61 +158,3 @@ export const resendVerificationEmail = async (req, res) => {
 	}
 };
 
-export const tryReset = async (req, res) => {
-
-	try {
-
-		const { email } = req.body;
-
-		const user = await UserModal.findOne({ email });
-		if (!user) return res.status(400).json({ message: "Email not registered." });
-		
-		const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "30m" });
-		const resetUrl = `${process.env.BASE_URL}/user/reset-password/${verificationToken}`;
-
-		const transporter = await getTransporter();
-		if (!transporter) return res.status(500).json({ message: "Could not create email transporter." });
-		const mailOptions = {
-
-			from: "Chordeographer <chordeographer.official@gmail.com>",
-			to: email,
-			subject: "Reset your password.",
-			text: `Verify your email: ${resetUrl}`,
-			html: `<div><a href='${resetUrl}'>Reset your password.</a></div>`
-		};
-
-		const result = await transporter.sendMail(mailOptions);
-		if (!result) return res.status(500).json({ message: "Could not send email for password recovery." });
-		return res.status(200).json({ result, message: `Password reset link sent to ${email}.` });
-
-	} catch (error) {
-
-		console.log("Internal server error while trying to reset password:", error.message);
-		return res.status(500).json({ message: "Internal server error: " + error.message });
-	}
-};
-
-export const resetPassword = async (req, res) => {
-
-	try {
-
-		const { verificationToken, password } = req.body;
-		
-		const payload = jwt.verify(verificationToken, process.env.JWT_SECRET);
-		if (!payload.email) return res.status(401).json({ message: "Invalid verification token." });
-
-		const user = await UserModal.findOne({ email: payload.email });
-		if (!user) return res.status(400).json({ message: "Email not registered." });
-
-		const hashedPassword = await bcrypt.hash(password, 12);
-		user.password = hashedPassword;
-		await user.save();
-
-		return res.status(200).json({ message: "Successfully reset password." });
-
-	} catch (error) {
-
-		console.log("Internal server error during authentication:", error.message);
-		return res.status(500).json({ message: "Internal server error: " + error.message });
-	}
-};
