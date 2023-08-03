@@ -1,174 +1,74 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { faCheck, faTimes, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import * as Components from './LoginSignup';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import dotenv from "dotenv";
+import UserModal from "../models/user.js";
+import mongoose from 'mongoose';
 
+dotenv.config();
 
-const USER_REGEX = /^[A-z][A-z0-9-_]{3,23}$/;
-const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
-const EMAIL_REGEX = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+export const createAccount = async (req, res) => {
+    const {email, username, password} = req.body;
 
-export const SignUpForm = () => {
-    const navigate = useNavigate()
+    const temp = await UserModal.findOne({email: email});
 
-    const userRef = useRef();
-    const errRef = useRef();
+    if (temp)
+    {
+        res.status(400).json({error: "Account already exists"});
+    }
+    else
+    {
+	    // add doc to db
+	    try {
+	        const newUser = await UserModal.create({email, username, password});
+	        res.status(200).json(newUser);
+	    } catch (error) {
+	        res.status(400).json({error: error.message});
+	    }
+    }
+};
+export const signin = async (req, res) => {
 
-    const [user, setUser] = useState('');
-    const [validName, setValidName] = useState(false);
-    const [userFocus, setUserFocus] = useState(false);
+	try {
 
-    const [email, setEmail] = useState('');
-    const [validEmail, setValidEmail] = useState(false);
-    const [emailFocus, setEmailFocus] = useState(false);
+		const { email, password } = req.body;
 
-    const [pwd, setPwd] = useState('');
-    const [validPwd, setValidPwd] = useState(false);
-    const [pwdFocus, setPwdFocus] = useState(false);
+		console.log('email: ', email)
+		
+		const user = await UserModal.findOne({ email });
+		if (!user) return res.status(400).json({ message: "Email does not belong to an existing user." });
+		
+		// const isPasswordCorrect = await bcrypt.compare(password, user.password);
+		if (password !== user.password ) return res.status(401).json({ message: "Invalid credentials." });
 
-    const [matchPwd, setMatchPwd] = useState('');
-    const [validMatch, setValidMatch] = useState(false);
-    const [matchFocus, setMatchFocus] = useState(false);
+		return res.status(200).json(user);
 
-    const [errMsg, setErrMsg] = useState('');
-    const [success, setSuccess] = useState(false);
+	} catch (error) {
 
-    useEffect(() => {
-        userRef.current.focus();
-    }, []);
+		console.log("Internal server error during sign in:", error.message);
+		return res.status(500).json({ message: "Internal server error: " + error.message });
+	}
+};
 
-    useEffect(() => {
-        setValidName(USER_REGEX.test(user));
-    }, [user]);
+// get all accounts
+export const getAccounts = async (req, res) => {
+    const account = await UserModal.find({}).sort({createdAt: -1});
 
-    useEffect(() => {
-        setValidEmail(EMAIL_REGEX.test(email));
-    }, [email]);
+    res.status(200).json(account);
+};
 
-    useEffect(() => {
-        setValidPwd(PWD_REGEX.test(pwd));
-        setValidMatch(pwd === matchPwd);
-    }, [pwd, matchPwd]);
+// update an account
+export const updateAccount = async (req, res) => {
+    const {id} = req.params;
 
-    useEffect(() => {
-        setErrMsg('');
-    }, [user, pwd, matchPwd]);
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(404).json({error: 'Account does not exist'});
+    }
 
-    const createAccount = async e => {
-        e.preventDefault();
-        console.log(user, email, pwd);
+    const account = await UserModal.findOneAndUpdate({_id: id}, {
+        ...req.body
+    });
 
-        // if(validName == true && validEmail == true && validPwd == true && validMatch == true)
-        // {
-            try {
-                const apiUrl = 'https://excerciseapi-3d89276bdcd6.herokuapp.com/createAccount'; 
-                const username = user
-                const password = pwd
-                const data = { email, username, password };
-            
-                const response = await axios.post(apiUrl, data, { headers: {
-                  'Content-Type': 'application/json'
-                  }}
-                );
-            
-                if(response.status === 200)
-                {
-                  console.log("Here")
-                }
-                // Handle the response from the API as needed
-                console.log('API Response:', response.data);
-                
-                // You can return the response data or handle it further as per your requirements
-                return response.data;
-            } catch (error) {
-            // Handle any errors that occurred during the API call
-            console.error('API Error:', error);
-            // throw error;
-            }
-        // }
-        // else
-        //     return;
-    };
+    if (!account) {
+        return res.status(404).json({error: 'Account does not exist'});
+    }
 
-    return (
-        <>
-            <p ref={errRef} className={errMsg ? "errmsg" : "offscreen"} aria-live="assertive">{errMsg}</p>
-            <Components.Form onSubmit={createAccount}>
-                {/* setting field values for sign up */}
-                <Components.Title>Sign up</Components.Title>
-
-                <Components.Input 
-                    type='userName' 
-                    placeholder='User Name'
-                    ref={userRef}
-                    autoComplete='off'
-                    onChange={e => setUser(e.target.value)}
-                    requiredaria-invalid={validName ? "false" : "true"}
-                    aria-describedby="uidnote"
-                    onFocus={() => setUserFocus(true)}
-                    onBlur={() => setUserFocus(false)} 
-                />
-                <FontAwesomeIcon icon={faCheck} className={validName ? "valid" : "hide"} />
-                <p id="uidnote" className={userFocus && user && !validName ? "instructions" : "offscreen"}>
-                    <FontAwesomeIcon icon={faInfoCircle} />
-                    &nbsp;4 to 24 characters.<br />
-                    Must begin with a letter.<br />
-                    Letters, numbers, underscores, hyphens allowed.
-                </p>
-
-                <Components.Input 
-                    type='email'
-                    placeholder='Email'
-                    onChange={e => setEmail(e.target.value)}
-                    requiredaria-invalid={validEmail ? "false" : "true"}
-                    aria-describedby="emailnote"
-                    onFocus={() => setEmailFocus(true)}
-                    onBlur={() => setEmailFocus(false)}
-                />
-                <FontAwesomeIcon icon={faCheck} className={validEmail ? "valid" : "hide"} />
-                <p id="emailnote" className={emailFocus && email && !validEmail ? "instructions" : "offscreen"}>
-                    <FontAwesomeIcon icon={faInfoCircle} />
-                    &nbsp;Enter a valid email address.
-                </p>
-
-                <Components.Input 
-                    type='password' 
-                    placeholder='Password'
-                    onChange={(e) => setPwd(e.target.value)}
-                    value={pwd}
-                    required
-                    aria-invalid={validPwd ? "false" : "true"}
-                    aria-describedby="pwdnote"
-                    onFocus={() => setPwdFocus(true)}
-                    onBlur={() => setPwdFocus(false)}
-                />
-                <FontAwesomeIcon icon={faCheck} className={validPwd ? "valid" : "hide"}/>
-                <p id="pwdnote" className={pwdFocus && !validPwd ? "instructions" : "offscreen"}>
-                    <FontAwesomeIcon icon={faInfoCircle} />
-                    &nbsp;8 to 24 characters.<br />
-                    Must include uppercase and lowercase letters, a number and a special character.<br />
-                    Allowed special characters: <span aria-label="exclamation mark">!</span> <span aria-label="at symbol">@</span> <span aria-label="hashtag">#</span> <span aria-label="dollar sign">$</span> <span aria-label="percent">%</span>
-                </p>
-                <Components.Input 
-                    type='password' 
-                    placeholder='Confirm Password'
-                    onChange={(e) => setMatchPwd(e.target.value)}
-                    value={matchPwd}
-                    required
-                    aria-invalid={validMatch ? "false" : "true"}
-                    aria-describedby="confirmnote"
-                    onFocus={() => setMatchFocus(true)}
-                    onBlur={() => setMatchFocus(false)}
-                />
-                <FontAwesomeIcon icon={faCheck} className={validMatch && matchPwd ? "valid" : "hide"} />
-                <p id="confirmnote" className={matchFocus && !validMatch ? "instructions" : "offscreen"}>
-                    <FontAwesomeIcon icon={faInfoCircle} />
-                    &nbsp;Must match the first password input field.
-                </p>
-                <Components.Button type='submit' style={{backgroundColor: '#7f44d4'}}>Sign Up</Components.Button>
-            </Components.Form>
-        </>
-    );
+    res.status(200).json(account);
 };
