@@ -15,7 +15,7 @@ export const createAccount = async (req, res) => {
 
     if (temp)
     {
-        res.status(400).json({error: "Account already exists"});
+        res.status(400).json({message: "Account already exists"});
     }
     else
     {
