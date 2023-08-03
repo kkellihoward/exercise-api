@@ -7,7 +7,7 @@ export async function getTransporter() {
 			auth: {
 				
 				user: 'bigproject4331@gmail.com',
-				pass: 'imwzbptyknypgxcq'
+				pass: 'fjvobsumlxcpyify'
 			}
 		});
 		
